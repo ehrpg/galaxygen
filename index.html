@@ -7,26 +7,34 @@
         <script type="text/javascript" src="vue.js"></script>
         <style media="screen">
           .cell {
-            float: left;
-            width: 200px;
-            height: 100px;
+            width: 50px;
+            height: 40px;
             border: 1px solid black;
+            border-radius: 25px;
+            text-align: center;
+            line-height: 15px;
+            padding-top: 10px;
+            margin: 5px;
+            cursor: default;
+            display:inline-block;
           }
           .row {
-            clear: both;
+            white-space: nowrap;
+          }
+          .center {
+            background-color: #f88;
+          }
+          .empty {
+            background-color: #aaa;
           }
         </style>
     </head>
     <body>
       <div id="output">
-
         <div v-for="row in $data" class="row">
-          <span v-for="cell in row" class="cell">
-            X: {{ cell.x }}<br>
-            Y: {{ cell.y }}<br>
-            Seed: {{ cell.seed }}<br>
-            Rnd: {{ cell.rnd }}<br>
-            Bodies: {{ cell.bodies }}
+          <span v-for="cell in row" v-bind:class="cell.classes" class="cell">
+            {{ cell.x }}<br>
+            {{ cell.y }}
           </span>
         </div>
       </div>
@@ -37,12 +45,10 @@
             this.z = (z ? z >>> 0 : 521288629);
             this.w = (w ? w >>> 0 : 88675123);
         }
-
         function Xor128_init(seed) {
             return new Xor128(seed);
         }
         Xor128.init = Xor128_init;
-
         function next() { // @return Number:
             var me = this, x = me.x, w = me.w,
                 t = x ^ (x << 11);
@@ -51,7 +57,6 @@
             return me.w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
         }
         Xor128.prototype.next = next;
-
         function make(cnt) {
             var result = [];
 
@@ -61,7 +66,6 @@
             return result;
         }
         Xor128.prototype.make = make;
-
         function Xor128_random(seed) {
             return Xor128_init(seed).make(3)[2] / 4294967296 * 2;
         }
@@ -91,24 +95,34 @@
           }
           return systems
         }
-        /**
-         * @param {Number} seed - Unique ID for system
-         * @param {Number} rnd  - Seeded random between 0 and 1
-         */
+
+        var density = 1
+
         function generateSystem(x, y) {
           var seed = coordsToSeed(x, y)
           var rnd = Xor128.random(seed)
-          var bodies = Math.ceil(rnd * 10)
+          var classes = []
+
+          if (Math.random() < density) {
+            var bodies = Math.ceil(rnd * 10)
+          } else {
+            classes.push("empty")
+          }
+          if (x === 0 && y === 0) {
+            classes.push("center")
+          }
+
           return {
             x: x,
             y: y,
             seed: seed,
             rnd: rnd,
-            bodies: bodies
+            bodies: bodies,
+            classes: classes
           }
         }
 
-        data = generateSystems(0, 0, 4, 4)
+        data = generateSystems(0, 0, 10, 10)
         new Vue({
           el: '#output',
           data: data
