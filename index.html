@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Galaxy Generator</title>
+        <script type="text/javascript" src="jquery.js"></script>
+        <script type="text/javascript" src="vue.js"></script>
+        <style media="screen">
+          .cell {
+            float: left;
+            width: 200px;
+            height: 100px;
+            border: 1px solid black;
+          }
+          .row {
+            clear: both;
+          }
+        </style>
+    </head>
+    <body>
+      <div id="output">
+
+        <div v-for="row in $data" class="row">
+          <span v-for="cell in row" class="cell">
+            X: {{ cell.x }}<br>
+            Y: {{ cell.y }}<br>
+            Seed: {{ cell.seed }}<br>
+            Rnd: {{ cell.rnd }}<br>
+            Bodies: {{ cell.bodies }}
+          </span>
+        </div>
+      </div>
+      <script type="text/javascript">
+        function Xor128(x, y, z, w) {
+            this.x = (x ? x >>> 0 : 123456789);
+            this.y = (y ? y >>> 0 : 362436069);
+            this.z = (z ? z >>> 0 : 521288629);
+            this.w = (w ? w >>> 0 : 88675123);
+        }
+
+        function Xor128_init(seed) {
+            return new Xor128(seed);
+        }
+        Xor128.init = Xor128_init;
+
+        function next() { // @return Number:
+            var me = this, x = me.x, w = me.w,
+                t = x ^ (x << 11);
+
+            me.x = me.y = me.z = w;
+            return me.w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
+        }
+        Xor128.prototype.next = next;
+
+        function make(cnt) {
+            var result = [];
+
+            for (var i = 0; i < cnt; ++i) {
+                result[i] = this.next();
+            }
+            return result;
+        }
+        Xor128.prototype.make = make;
+
+        function Xor128_random(seed) {
+            return Xor128_init(seed).make(3)[2] / 4294967296 * 2;
+        }
+        Xor128.random = Xor128_random;
+
+        function coordsToSeed(x, y) {
+          x = x & (Math.pow(2, 16) - 1)
+          y = y & (Math.pow(2, 16) - 1)
+          return ((x << 16) | y)
+        }
+
+        function generateSystems(x, y, width, height) {
+          xbounds = [x - width, x + width]
+          ybounds = [y - height, y + height]
+          var systems = [[]]
+          var i = 0, j = 0
+          for (var y = ybounds[0]; y <= ybounds[1]; y++) {
+            for (var x = xbounds[0]; x <= xbounds[1]; x++) {
+              if (!systems[j]) {
+                systems[j] = []
+              }
+              systems[j][i] = generateSystem(x, y)
+              i++
+            }
+            j++
+            i = 0
+          }
+          return systems
+        }
+        /**
+         * @param {Number} seed - Unique ID for system
+         * @param {Number} rnd  - Seeded random between 0 and 1
+         */
+        function generateSystem(x, y) {
+          var seed = coordsToSeed(x, y)
+          var rnd = Xor128.random(seed)
+          var bodies = Math.ceil(rnd * 10)
+          return {
+            x: x,
+            y: y,
+            seed: seed,
+            rnd: rnd,
+            bodies: bodies
+          }
+        }
+
+        data = generateSystems(0, 0, 4, 4)
+        new Vue({
+          el: '#output',
+          data: data
+        })
+      </script>
+    </body>
+</html>
