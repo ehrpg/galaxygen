@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style media="screen">
+      body {
+        background-color: black
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="main" width="1000" height="1000" style="border: 1px solid black" ></canvas>
+
+    <script src="./big.js"></script>
+    <script>
+      function calc_distance(Pd, m2) {
+        var Ps = Pd * 3600 * 24
+        var lhs = Big(Ps).pow(2).times(G).times(m2)
+        var rhs = PI.pow(2).times(4)
+        var tmp = lhs.div(rhs)
+        return Math.pow(tmp.toString(), 1 / 3)
+      }
+
+      function calc_Fzf(m1, m2, r) {
+        var lhs = G.times(m1).times(m2)
+        var rhs = Big(r).pow(2)
+        return lhs.div(rhs)
+      }
+
+      function calc_v(Fg, distance, m1) {
+        return (Fg.times(distance)).div(m1).sqrt()
+      }
+
+      function calc_Uorbit(r) {
+        return PI.times(2).times(r)
+      }
+
+      var G = Big('6.67508e-11')
+      var PI = Big(355).div(113)
+
+      var Em = Big('5.97219e+24')
+      var Sm = Big('1.989e+30')
+      var Er = 6371
+      var Sr = 696000
+
+      var Mm = Big('7.34767309e+22')
+      var Mr = 1737.4
+
+      var Pd = 200
+      var Pd_M = 27.321582
+
+
+      var distance = calc_distance(Pd, Sm)
+      var Fzf = calc_Fzf(Em, Sm, distance)
+      var v = calc_v(Fzf, distance, Em)
+      var Uorbit = calc_Uorbit(distance)
+
+      var distance_M = calc_distance(Pd_M, Em)
+      var Fzf_M = calc_Fzf(Mm, Em, distance_M)
+      var v_M = calc_v(Fzf_M, distance_M, Mm)
+
+      var timescale = 1 * 60 * 60 * 24 * 5 // 6h
+
+      var omega = v.div(distance)
+      var omega_M = v_M.div(distance_M)
+
+      var rel_distance = relNum(distance)
+      var rel_distance_M = relNum(distance_M)
+      console.log('d: ' + rel_distance);
+      console.log('d_M: ' + rel_distance_M);
+
+      var interval = 1000 / 60
+
+      t = 0
+      draw()
+      setInterval(draw, interval)
+
+      function draw() {
+        var c = document.getElementById('main')
+        var ctx = c.getContext("2d")
+        ctx.clearRect(0, 0, c.width, c.height)
+
+        var time = t * timescale * (interval / 1000)
+        var angle = omega * time
+        var angle_M = omega_M * time
+
+        var x = Math.cos(angle)
+        var y = Math.sin(angle)
+
+        var x_M = Math.cos(angle_M)
+        var y_M = Math.sin(angle_M)
+
+        x = x * 250 + 500
+        y = y * 250 + 500
+
+        ctx.beginPath()
+        ctx.strokeStyle="grey"
+        ctx.setLineDash([15])
+        ctx.arc(500, 500, 250, 0, 2 * PI)
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.strokeStyle="grey"
+        ctx.setLineDash([15])
+        ctx.arc(x, y, 40, 0, 2 * PI)
+        ctx.stroke()
+
+        ctx.strokeStyle="#000"
+
+        ctx.beginPath()
+        ctx.fillStyle = "#ff0"
+        ctx.arc(500, 500, 25, 0, 2 * PI)
+        ctx.stroke()
+        ctx.fill()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#4af"
+        ctx.arc(x, y, 10, 0, 2 * PI)
+        ctx.stroke()
+        ctx.fill()
+
+        ctx.beginPath()
+        ctx.fillStyle = "#efefef"
+        x_M = x_M * 40 + x
+        y_M = y_M * 40 + y
+        ctx.arc(x_M, y_M, 5, 0, 2 * PI)
+        ctx.stroke()
+        ctx.fill()
+
+        t++
+      }
+
+      function relNum(num) {
+        return Big(num).div(distance).times(250)
+      }
+
+    </script>
+
+  </body>
+</html>
